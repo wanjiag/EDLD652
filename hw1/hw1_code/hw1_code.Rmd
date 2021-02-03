@@ -1,0 +1,120 @@
+---
+title: "hw1_code"
+author: "Wanjia Guo"
+date: "2/2/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(readr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+files <- fs::dir_ls(here::here("../data/"))
+length = length(stringr::str_split(files[1], "/")[[1]])
+
+for (i in 1:length(files)) assign(stringr::str_split(files[i], "/")[[1]][length], read_csv(files[i]))
+```
+
+### Data Exploration
+
+#### Figure 1
+
+```{r}
+
+df1 = courses.csv %>% right_join(studentInfo.csv) %>% group_by(gender, region, id_student) %>% summarise(m = mean(module_presentation_length)) %>% group_by(gender, region) %>% summarise(m = mean(m))
+
+ggplot(df1, aes(gender, region, fill=m)) + geom_tile() + coord_fixed() + viridis::scale_fill_viridis()
+
+```
+
+Female take classes with lower module presentation length in general, only except femal in Ireland. Moreover, people from Scotland seem to take longer classes than other areas. 
+
+#### Figure 2
+
+```{r}
+TMA.assessments.id = assessments.csv %>% select(id_assessment, assessment_type, code_module, code_presentation) %>% filter(assessment_type == "TMA") 
+TMA.score = TMA.assessments.id %>% left_join(studentAssessment.csv)
+
+studentInfo.csv %>%  group_by(code_module, code_presentation, id_student) %>% count() %>% filter(n>1)
+
+TMA.student.info = TMA.score %>% inner_join(studentInfo.csv) 
+
+```
+
+
+```{r}
+
+df2 = TMA.student.info %>% group_by(age_band) %>% summarise(m_credits = mean(studied_credits, na.rm = TRUE), m_score = mean(score, na.rm = TRUE)) %>% gather("type", "score", -age_band)
+
+
+ggplot(df2, aes(x=age_band, y=score, color=type)) + 
+  geom_point() + geom_line(aes(group=type)) + 
+  scale_color_brewer(palette = "Set1", name="Type", labels=c("Mean Credits", "Mean Scores")) + 
+  labs(x="Age", y="Scores")+
+  theme_minimal()
+
+```
+
+With higer age group, people tend to take less credits but have higher TMS scores.  
+
+### Plot3
+```{r}
+students.no.TMA.score = studentInfo.csv %>% 
+  anti_join(TMA.score, by="id_student") %>% # remove all students with TMA scores
+  group_by(gender, region, id_student) %>% count() %>% # avoid counting one student repeatedly
+  group_by(gender, region) %>% count() 
+
+ggplot(students.no.TMA.score, aes(x=region, y=nn, fill=gender)) + 
+  geom_bar(stat="identity", position =  position_dodge()) + 
+  coord_flip() + theme_classic() + scale_fill_brewer(palette = "Dark2") + 
+  labs(y="Number of Students Did Not Take TMA", x="Region")
+```
+
+### Homework Plot
+
+```{r}
+avg.TMA = TMA.student.info %>% group_by(gender, highest_education, final_result) %>% summarise(mean = mean(score, na.rm=TRUE)) 
+```
+
+```{r,fig.width=6,fig.height=11}
+avg.TMA$final_result = factor(avg.TMA$final_result, levels = c("Fail", "Withdrawn", "Pass", "Distinction"))
+avg.TMA$highest_education = factor(avg.TMA$highest_education, levels = c("No Formal quals", "Lower Than A Level", "A Level or Equivalent", "HE Qualification", "Post Graduate Qualification"))
+
+ggplot(avg.TMA, aes(x=mean, y=highest_education, color=gender)) + 
+  geom_line(aes(group = highest_education), size=3, color="dimgrey") + 
+  geom_point(size=4) + 
+  facet_wrap(~final_result, ncol=1) + 
+  scale_color_manual(values = c("lightblue", "dodgerblue3")) +
+  labs(x="Average Score", y="Highest Education", 
+       caption="Data from Kuzilek, Hlosta, & Zdrahal (2017). \nhttps://analyse.kmi.open.ac.uk/open_dataset", 
+       title="Average TMA Scores",
+       subtitle="Results displayed by Education, gender, and Final Result Designation")+
+  theme_minimal() 
+#theme(plot.title= element_text(hjust = -0.6)) + theme(plot.subtitle = element_text(hjust = -0.6))
+```
+
+```{r,fig.width=6.5,fig.height=11}
+
+new.avg.TMA = avg.TMA %>% spread(gender, mean) %>% mutate(diff = ifelse(`F`-`M` > 0, TRUE, FALSE)) %>% gather(gender, mean, -c(highest_education, final_result, diff))
+
+ggplot(new.avg.TMA, aes(x=mean, y=highest_education)) + 
+  geom_line(aes(group = highest_education, color=diff), size=3) + 
+  geom_point(aes(fill=gender), size=5, shape=21, stroke = 0) + 
+  facet_wrap(~final_result, ncol=1) + 
+  scale_fill_manual(values = c("F"="lightskyblue2","M"="dodgerblue3"),
+                    name = "Gender", labels = c("Female", "Male"))+
+  scale_color_manual(values =c("TRUE"="pink","FALSE"="slategray2"),
+                     name = "Higher Mean", 
+                     breaks = c(TRUE, FALSE),
+                     labels = c("Female", "Male"))+
+  labs(x="Average Score", y="Highest Education", 
+       caption="Data from Kuzilek, Hlosta, & Zdrahal (2017).\nhttps://analyse.kmi.open.ac.uk/open_dataset",
+       title="Average TMA Scores",
+       subtitle="Results displayed by Education, gender, and Final Result Designation")+
+  theme_minimal()+
+  theme(legend.position = "bottom")
+
+```
+
