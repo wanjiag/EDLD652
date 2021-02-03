@@ -21,27 +21,44 @@ Github repo: https://github.com/wanjiag/EDLD652/tree/main/lab2
 
 ```{r warning=FALSE}
 google_trends_long <- gather(google_trends, key = "hurricane", value = "score", -date)
+
+# I would encourage you to try to gain fluency with `pivot_longer()` instead, 
+# which has superseded `gather()`. For example, the below pulls out just the 
+# hurricane name while doing the `pivot_longer()`
+
+google_trends %>% 
+  pivot_longer(starts_with("hurricane"), 
+               names_to = "hurricane", 
+               values_to = "interest",
+               names_pattern = "_(.+)_")
+
 ```
 
 Visualize the change in trends for each hurricane over time in one plot with three scales. Map color to a discrete scale.
 
 ```{r warning=FALSE}
-p1 <- ggplot(google_trends_long, aes(x=date, y=score, color=hurricane)) + geom_line()
+p1 <- ggplot(google_trends_long, aes(x = date, y = score, color = hurricane)) +
+  geom_line()
 p1
+
+# Careful about code styling, otherwise it looks great!
 ```
 
 Visualize the trends again, this time with solid shapes (if your first plot was already solid shapes, use lines). 
 
 ```{r warning=FALSE}
-p2 <- ggplot(google_trends_long, aes(x=date, y=score, fill=hurricane)) + geom_ribbon(ymin=0, ymax=google_trends_long$score, alpha=0.5, color="white")
+p2 <- ggplot(google_trends_long, aes(x = date, y = score, fill = hurricane)) +
+  geom_ribbon(aes(ymin = 0, ymax = score), alpha = 0.5, color = "white")
 p2
 ```
 
 Visualize the same relation, but change the scales so color is mapped to a continuous scale.
 
 ```{r warning=FALSE}
-p3 <- ggplot(google_trends_long, aes(x=date, y=hurricane, fill=score)) + geom_tile() + coord_fixed() +
-  viridis::scale_fill_viridis()
+p3 <- ggplot(google_trends_long, aes(x = date, y = hurricane, fill = score)) + 
+  geom_tile() + 
+  coord_fixed() +
+  scale_fill_viridis_c() # shouldn't neet to namespace because it ships w/ggplot2, just use the ggplot version
 p3
 ```
 
@@ -50,15 +67,24 @@ Create a data frame (using tibble() or data.frame()) that includes the dates tha
 Make any final modifications to the plot you’d like to communicate the information as effectively as possible
 
 ```{r warning=FALSE}
-
 landfill <- tibble(hurricane = c("Harvey", "Irma", "Jose", "Maria"), 
-                   date = c("2017-08-25","2017-09-10", NA, "2017-09-20"))
-landfill$date <- as.Date(landfill$date)
+                   date = c("2017-08-25","2017-09-10", NA, "2017-09-20")) %>% 
+  mutate(date = as.Date(date))
 
-p4 <- p2 + geom_vline(xintercept = landfill$date, color="darkgrey") +
-  scale_fill_discrete(name="Hurricane",
-                      labels=c("Harvey", "Irma", "Jose", "Maria")) +
-  geom_label(data = landfill, aes(x=date, y=max(google_trends_long$score)+10,label = hurricane), fill = "darkgrey", colour = "white", show.legend = FALSE) + theme_minimal() + theme(legend.position="top")
+p4 <- p2 + geom_vline(aes(xintercept = date), 
+                      data = landfill,
+                      color = "darkgrey") +
+  scale_fill_discrete(name = "Hurricane",
+                      labels = c("Harvey", "Irma", "Jose", "Maria")) +
+  geom_label(aes(x = date, 
+                 y = max(google_trends_long$score) + 10,
+                 label = hurricane), 
+             data = landfill, 
+             fill = "darkgrey", 
+             colour = "white", 
+             show.legend = FALSE) + 
+  theme_minimal() + 
+  theme(legend.position = "top")
 
 p4
 ```
@@ -66,9 +92,11 @@ p4
 ### 2. Replicate the “National cable news networks” plot from the story using the tv_states data. Don’t worry about all the labels. Try to match the colors but don’t worry about getting them exact.
 
 ```{r warning=FALSE}
+# I would again encourage you to use `pivot_longer()` and the tidyverse
+# e.g., `mutate()`
 tv_states_long <- gather(tv_states, key = "location", value = "score", -date)
 tv_states_long$location <- factor(tv_states_long$location,
-                                     levels=c("florida", "texas", "puerto_rico"))
+                                     levels = c("florida", "texas", "puerto_rico"))
 
 news_data <- tibble(news = c("Harvey\nlandfall", "Irma\nlandfall", "Maria\nlandfall", "Las Vegas\nshooting"),
                    date = c("2017-08-25","2017-09-10", "2017-09-20", "2017-10-01"))
@@ -81,18 +109,27 @@ location_text$x <- as.Date(location_text$x)
 
 color_platte <- c("#FC5185", "#ED713A", "#3FC1C9")
 
-ggplot(tv_states_long, aes(x=date, y=score, fill=location)) + 
-  geom_ribbon(ymin=0, ymax=tv_states_long$score, color="white") +
+ggplot(tv_states_long, aes(x = date, y = score, fill = location)) + 
+  geom_ribbon(aes(ymin = 0, ymax = score), 
+              color = "white") +
   scale_fill_manual(values = color_platte) +
-  labs(y="Share of sentences", title = "National cable news networks", caption = "Includes Bloomberg, CNBC, CNN, Fox Business, Fox News and MSNBC.\nFiveThirtyEight") + 
+  labs(y = "Share of sentences", 
+       title = "National cable news networks", 
+       caption = "Includes Bloomberg, CNBC, CNN, Fox Business, Fox News and MSNBC.\nFiveThirtyEight") + 
   theme_minimal(base_size = 12) + 
   theme(axis.title.x = element_blank(),
         legend.position="none", 
         plot.title = element_text(hjust = 0.5), 
         plot.caption = element_text(hjust = 0)) +
-  geom_vline(xintercept = news_data$date, color="lightgrey", linetype="dotted") + 
-  geom_label(data=news_data, aes(x=date, y=3.8, label=news), inherit.aes = FALSE, color="grey80",  label.size = NA)+
-  geom_text(data=location_text, aes(x,y,label=location), inherit.aes = FALSE, size=4.5) + 
+  # You should really never need `$` within ggplot or the tidyverse generally
+  geom_vline(aes(xintercept = date),
+             data = news_data,
+             color = "lightgrey", 
+             linetype = "dotted") + 
+  geom_label(data = news_data, aes(x = date, y = 3.8, label = news), 
+             inherit.aes = FALSE, color = "grey80",  label.size = NA)+
+  geom_text(data = location_text, aes(x, y, label = location), 
+            inherit.aes = FALSE, size=4.5) + 
   ylim(0,4)
 ```
 
@@ -101,34 +138,53 @@ ggplot(tv_states_long, aes(x=date, y=score, fill=location)) +
 1. a pie group that shows the proportion of each gender
 
 ```{r warning=FALSE}
-gender_prop = comic_characters %>% group_by(sex) %>% count() %>% mutate(percentage = n/sum(.$n))
+gender_prop = comic_characters %>% 
+  count(sex) %>%  # no need to group_by with `count()`
+  mutate(percentage = n/sum(.$n))
 
-ggplot(gender_prop, aes(x="", y=percentage, fill=sex)) + geom_bar(stat="identity", width=1) + coord_polar("y", start=0) + theme_void()
+ggplot(gender_prop, aes(x = "", y = percentage, fill = sex)) + 
+  geom_bar(stat = "identity", width = 1) + 
+  coord_polar("y", start = 0) + 
+  theme_void()
 ```
 
 2. the first appearance of characters across time, separated by different gender.
 
 ```{r warning=FALSE}
-gender_prop_year = comic_characters %>% group_by(sex, year) %>% count()
+gender_prop_year <- comic_characters %>% 
+  count(sex, year)
 
-ggplot(gender_prop_year, aes(x=year, y=n, group=sex, color=sex)) + geom_line() 
+ggplot(gender_prop_year, aes(x = year, y = n, group = sex, color = sex)) + 
+  geom_line() 
 ```
 
 3. Culmultive distribution (proportion) of each gender. It's interesting to see that the appearance of female and NA are at similar rate within each own category. However, transgener and genderfuild characters are very limited, and thus makes the big steps.
 
 ```{r warning=FALSE}
-gender_prop_month = comic_characters %>% group_by(sex, date) %>% count()
+gender_prop_month <- comic_characters %>% 
+  count(sex, date)
 
-ggplot(gender_prop_month, aes(x=date, y=n, group=sex, color=sex)) + stat_ecdf(geom = "step")
+ggplot(gender_prop_month, aes(x = date, y = n, group = sex, color = sex)) + 
+  stat_ecdf(geom = "step")
+
+# ooh... I like this one
 ```
+
 
 4. final figure
 
 ```{r warning=FALSE}
-gender_prop_year = comic_characters %>% group_by(sex, year) %>% count()
+gender_prop_year <- comic_characters %>% 
+  count(sex, year)
 gender_prop_year$sex = sub(" .*", "", gender_prop_year$sex)
-gender_prop_year$sex = factor(gender_prop_year$sex, levels=c("Male", "Female", "Agender","Genderless","Genderfluid","Transgender"))
-
+gender_prop_year$sex = factor(gender_prop_year$sex, 
+                              levels=c("Male", 
+                                       "Female",
+                                       "Agender",
+                                       "Genderless",
+                                       "Genderfluid",
+                                       "Transgender"))
+# I'm stopping styling here...
 gender_prop_year_na = gender_prop_year %>% filter(is.na(sex))
 gender_prop_year_no_na = gender_prop_year %>% filter(sex %in% c("Male", "Female", "Agender","Genderless"))
 gender_prop_year_no_na$sex = factor(gender_prop_year_no_na$sex, levels=c("Male", "Female", "Agender","Genderless"))
@@ -141,7 +197,7 @@ text[3,2] = 5
 text[4,3] = 1979
 
 ggplot(gender_prop_year_no_na, aes(x=year, y=n, fill=sex)) + 
-  geom_ribbon(ymin=0, ymax=log(gender_prop_year_no_na$n,2)) + 
+  geom_ribbon(aes(ymin=0, ymax=log(n, 2))) + 
   geom_label(data=text, aes(x=x, y=max, label=sex, fill=sex),color="white",label.size = NA)+
   geom_line(data=gender_prop_year_na, color="darkgrey", linetype="dotted")+
   scale_y_continuous(trans='log2') + 
@@ -152,6 +208,7 @@ ggplot(gender_prop_year_no_na, aes(x=year, y=n, fill=sex)) +
   geom_point(data = gender_prop_year_no_na_others, aes(color=sex), shape=8, size=3)+
   guides(fill = FALSE)+
   theme(legend.position = "bottom")
+# Pretty!
 
 ```
 
