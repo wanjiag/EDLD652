@@ -197,7 +197,7 @@ text[3,2] = 5
 text[4,3] = 1979
 
 ggplot(gender_prop_year_no_na, aes(x=year, y=n, fill=sex)) + 
-  geom_ribbon(aes(ymin=0, ymax=log(n, 2))) + 
+  geom_ribbon(aes(ymin=0, ymax=n)) + 
   geom_label(data=text, aes(x=x, y=max, label=sex, fill=sex),color="white",label.size = NA)+
   geom_line(data=gender_prop_year_na, color="darkgrey", linetype="dotted")+
   scale_y_continuous(trans='log2') + 
