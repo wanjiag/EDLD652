@@ -6,6 +6,9 @@ output:
     vertical_layout: fill
 ---
 
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir = "./") })
+
 ```{r setup, include=FALSE}
 library(flexdashboard)
 ```
@@ -13,21 +16,13 @@ library(flexdashboard)
 Column {data-width=650}
 -----------------------------------------------------------------------
 
-### Lab1
-
- [title](./lab2/lab2_code.html)
+### [Lab2](../lab2/lab2_code.html)
 
 ```{r}
 
 ```
 
-### Lab2
-
-```{r}
-
-```
-
-### Lab3
+### [Lab3](../lab3/lab3_script.html)
 
 ```{r}
 
@@ -36,13 +31,13 @@ Column {data-width=650}
 Column {data-width=350}
 -----------------------------------------------------------------------
 
-### Homework2
+### [Homework1](../hw1/hw1_code/hw1_code.html)
 
 ```{r}
 
 ```
 
-### Homework3
+### Homework2
 
 ```{r}
 
