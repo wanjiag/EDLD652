@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "In class dashboard"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -13,7 +13,21 @@ library(flexdashboard)
 Column {data-width=650}
 -----------------------------------------------------------------------
 
-### Chart A
+### Lab1
+
+ [title](./lab2/lab2_code.html)
+
+```{r}
+
+```
+
+### Lab2
+
+```{r}
+
+```
+
+### Lab3
 
 ```{r}
 
@@ -22,13 +36,13 @@ Column {data-width=650}
 Column {data-width=350}
 -----------------------------------------------------------------------
 
-### Chart B
+### Homework2
 
 ```{r}
 
 ```
 
-### Chart C
+### Homework3
 
 ```{r}
 
