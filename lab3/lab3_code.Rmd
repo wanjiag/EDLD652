@@ -1,0 +1,139 @@
+---
+title: "lab3_script"
+author: "Wanjia Guo"
+date: "2/6/2021"
+output: 
+  html_document
+---
+
+```{r setup, include=FALSE}
+library(readr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(gghighlight)
+library(colorblindr)
+
+df <- read_csv(here::here("data", "lab3", "honeyproduction.csv"))
+```
+
+### Visualize the total production of honey across years by state Use color to highlight the west coast (Washington, Oregon, and California) with a different color used for each west coast state.
+
+
+```{r}
+
+p1 <- ggplot(df, aes(year, totalprod)) + 
+  geom_line(aes(group=state),
+            color="lightgrey") + 
+  geom_line(data = df %>% filter(state %in% c("CA", "OR", "WA")), 
+            aes(color=state), 
+            size=1.5) + 
+  theme_minimal()
+
+p1
+
+```
+
+### Reproduce the plot according three different kinds of color blindness, as well as a desaturated version.
+
+```{r}
+
+cvd_grid(p1)
+
+```
+
+### Reproduce the plot using a color blind safe palette.
+
+```{r}
+
+p2 = p1 + scale_color_viridis_d()
+
+p2
+
+cvd_grid(p2)
+
+```
+
+### Download the file here denoting the region and division of each state.
+#### Join the file with your honey file.
+
+```{r}
+
+df2 <- read_csv(here::here("data", "lab3", "regions_divisions.txt"))
+
+df3 <- df %>% left_join(df2, by=c("state"="State Code"))
+
+```
+
+#### Produce a bar plot displaying the average honey for each state (collapsing across years).
+
+```{r}
+df_avg = df3 %>% 
+  group_by(Region, state) %>% 
+  summarise(year_m = mean(totalprod))
+
+ggplot(df_avg, aes(x=state, y=year_m)) + 
+  geom_bar(stat="identity") + 
+  coord_flip() + 
+  theme_minimal()
+```
+
+#### Use color to highlight the region of the country the state is from.
+Note patterns you notice: The production of honey is an exponential distribution, and most of tail are Northeast and South.
+
+```{r}
+ggplot(df_avg, aes(x=reorder(state, year_m), 
+                   y=year_m, 
+                   fill=Region)) + 
+  geom_bar(stat="identity") + 
+  coord_flip() + 
+  scale_fill_OkabeIto() +
+  labs(x="State", 
+       y="Total production (averaged over years)") + 
+  theme_minimal()
+```
+
+### Create a heatmap displaying the average honey production across years by region (averaging across states within region).
+
+```{r}
+
+df_avg2 = df3 %>% 
+  group_by(Region, year) %>% 
+  summarise(year_m = mean(totalprod))
+
+ggplot(df_avg2, aes(x=year, 
+                    y=Region, 
+                    fill=year_m)) + 
+  geom_tile() + 
+  scale_fill_viridis_c() + 
+  labs(fill = "Production") + 
+  coord_fixed() + 
+  theme_minimal() 
+
+```
+
+
+### Create at least one more plot of your choosing using color to distinguish, represent data values, or highlight.
+
+I tried for a while but had difficulties in installing the "albersusa" package, which seems to be caused by a failure to install the "units" package. When I tried to install the "unit" manually, the error message says I need the "libudunits2.so" to install the "units", so I tried to install udunits through command line. Then the command line says it was installed already, so I am a bit run out of ideas for the installation. 
+
+```{r}
+df_avg3 = df3 %>% 
+  group_by(state) %>% 
+  summarise(m=mean(priceperlb))
+
+ggplot(df3, aes(year, 
+                priceperlb, 
+                color=state)) + 
+  geom_line(aes(group=state)) + 
+  facet_wrap(~state)+
+  gghighlight(max(priceperlb) > 3.5, 
+              use_direct_label=FALSE) + 
+  scale_color_OkabeIto(darken = 0.2) +
+  theme_minimal() +
+  labs(title = "States with honey unit price over $3.5 over time", 
+       y = "price per lb") + 
+  theme(legend.position = "none")
+
+```
+

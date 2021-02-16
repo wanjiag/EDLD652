@@ -1,0 +1,57 @@
+---
+title: "project_draft"
+author: "Wanjia Guo"
+date: "2/16/2021"
+output: 
+  html_document:
+    toc_float: TRUE
+---
+
+## Loading data and packages
+
+```{r setup, include=FALSE}
+
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+
+files <- fs::dir_ls(here::here("data", "project"))
+
+obs <- gsub(".+project/(.+)\\.csv", "\\1", files)
+purrr::map2(obs, files, ~{
+   assign(.x, read_csv(.y), envir = .GlobalEnv)
+})
+```
+
+## How different songs’ properties influence it’s popularity?
+
+```{r}
+range(data$danceability)
+range(data$duration_ms)
+range(data$tempo)
+range(data$speechiness)
+
+fig1_data = data %>% 
+  select(id, popularity, danceability, duration_ms, tempo, speechiness) %>% 
+  mutate(duration = 
+           (duration_ms-min(duration_ms))/(max(duration_ms)-min(duration_ms))) %>% 
+  select(-duration_ms) %>% 
+  mutate(tempo = (tempo-min(tempo))/(max(tempo)-min(tempo))) %>% 
+  mutate(danceability_cuts = cut(danceability, 30, labels=FALSE),
+         duration_cuts = cut(duration, 30, labels=FALSE),
+         tempo_cuts = cut(tempo, 30, labels=FALSE),
+         speechiness_cuts = cut(speechiness, 30, labels=FALSE)) %>%
+  select(-c(danceability, duration, tempo, speechiness)) %>% 
+  pivot_longer(cols = danceability_cuts:speechiness_cuts, 
+               names_to = "cuts_property") %>% 
+  group_by(cuts_property, value) %>% 
+  summarise(popularity_mean = median(popularity))
+
+
+ggplot(fig1_data, aes(x=value, y=popularity_mean, color=cuts_property)) + geom_line() + geom_ribbon(aes(fill=cuts_property), alpha=0.8) 
+
+
+```
+
+
+
