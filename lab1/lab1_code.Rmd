@@ -1,0 +1,107 @@
+---
+title: "Lab 1"
+author: "Sarah Dimakis, Sarah Donaldson, Wanjia Guo, and Meghan Siritzky"
+date: "1/13/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, include = FALSE}
+#load libraries
+library(here)
+library(rio)
+library(tidyverse)
+```
+
+```{r, include = FALSE}
+#import data
+data <- import(here("data", "lab1", "rstats_tweets.rds"))
+```
+
+# Plot 1 rough draft
+
+Sarah Donaldson
+```{r data_clean, include=FALSE}
+
+rstats <- data %>% 
+  group_by(screen_name) %>% 
+  summarize(n=n()) %>% 
+  mutate(screen_name = factor(screen_name)) %>% 
+  arrange(desc(n)) %>% 
+  slice(1:25)
+
+```
+
+```{r plot1_RD}
+ggplot(rstats, aes(fct_reorder(screen_name, n), n)) +
+  theme_minimal() +
+  geom_col() +
+  coord_flip() +
+  labs(x = "screen_name")
+
+```
+
+# Finalized Plot 1
+
+Wanjia
+```{r plot1}
+
+ggplot(rstats, aes(x=fct_reorder(screen_name, n), y=n)) +
+  geom_hline(yintercept=c(0, 10000, 20000, 30000),  color = "darkgrey")+
+  geom_col(fill="steelblue", alpha=0.8) + # setting up bar color
+  coord_flip() + 
+  labs(x = "Twitter Screen Name", 
+       y="Count",
+       caption = "Data from Mike Kearny, distributed via #tidytuesday",
+       title = "Most prolific #rstats twitters",
+       subtitle = "Top 25 screen names displayed") + # adding text
+  theme_classic()+ 
+  theme(axis.line = element_blank(), 
+        axis.ticks = element_blank(), # remove axis for x- and y-
+        plot.title = element_text(hjust = -0.35),
+        plot.subtitle = element_text(hjust = -0.35)) # adjusting title and subtitle locaiton
+
+
+```
+
+
+# Plot 2 rough draft
+
+```{r, message = FALSE}
+#adding a month variable that is created_at rounded to the nearest month
+data <- data %>% 
+  mutate(month = lubridate::round_date(created_at, unit = "month"))  
+
+#creating figure
+fig_2 <- data %>% 
+  filter(month < lubridate::as_datetime("2019-01-01 00:00:00")) %>% #filtering months before 2019
+  group_by(month) %>% #group by month
+  summarize(n = n()) %>% #count observations per month
+  ggplot(aes(month, n)) +
+    geom_line() + #add black line
+    geom_smooth() #add blue line with se 
+fig_2
+
+```
+
+
+# Finalized Plot 2
+
+```{r, message = FALSE}
+#updated figure with visual edits
+fig_2_finalized <- data %>% 
+  filter(month < lubridate::as_datetime("2019-01-01 00:00:00")) %>% #filtering months before 2019
+  group_by(month) %>% #group by month
+  summarize(n = n()) %>% #count observations per month
+  ggplot(aes(month, n)) +
+  geom_line(color = "gray40", size = 0.8) + #make line grey and thicker
+  geom_smooth(se = FALSE, color = "magenta2") + #make line magenta and take away confidence intervals 
+  geom_area(fill = "dodgerblue3", alpha = 0.2) + #shade in area under the curve in light blue
+  labs(x = "Year (data summarized by month)", #add axis labels, title, and caption
+       y = "Number of #rstats tweets",
+       title = "Growth of the #rstats hashtag on twitter over time",
+       caption = "Data from Mike Kearny, distributed via #tidytuesday") +
+  theme_minimal() #change theme
+fig_2_finalized
+```
