@@ -1,0 +1,272 @@
+---
+title: "Homework 2"
+author: "Sarah Dimakis, Wanjia Guo, & Meg Siritzky"
+output: 
+  html_document: 
+    toc: yes
+    toc_float: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+ 
+```{r, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(rio)
+library(here)
+library(ggridges)
+library(ungeviz)
+library(colorspace)
+library(ggtext)
+library(gt)
+```
+
+```{r, message = FALSE, warning = FALSE}
+# uploading transit_cost
+transit_cost <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-01-05/transit_cost.csv')
+
+#I made this daniel anderson theme so that I could use less code on my plots
+da_theme <- theme_minimal(base_size = 13) +
+  theme(panel.background = element_rect(fill = "transparent", colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_line(color = "gray90"),
+        plot.title.position = "plot")
+
+country_codes <- countrycode::codelist %>% 
+  select(country_name = country.name.en, country = ecb)
+```
+
+# Problem 1
+
+```{r, fig.height= 10, fig.width= 7, message = FALSE, warning = FALSE}
+# cleaning and transforming the data
+
+figure_1 <- transit_cost %>%
+  mutate(real_cost = as.numeric(real_cost)) %>% 
+  group_by(country) %>% 
+  summarize(average_transit_cost = 
+              mean(real_cost,na.rm = TRUE),
+            n = n(),
+            se = sd(real_cost, na.rm = TRUE)/sqrt(n)) %>% 
+  left_join(country_codes) %>% 
+  filter(average_transit_cost != "NaN") %>% 
+  filter(country != "UK") # it looks like you didn't use UK in your plot so I took it out too
+
+#if I wanted to keep in the UK I would need to give it a name
+# it didn't match because it is in country codes as "GB" 
+#figure_1[53, "country_name"] <- "United Kingdom"
+
+```
+
+```{r, fig.height= 10, fig.width= 7, warning = FALSE}
+#I made this function to make my code more readable (for the next problem but I'm using it here too.) It calculates the left or right confidence interval bounds for average transit cost for a given probability (e.g., for a 95% ci, left = ci(.025), right = ci(.975))
+
+ci <- function(p){
+  figure_1$average_transit_cost + qnorm(p)*figure_1$se
+}
+
+figure_1 %>% 
+  ggplot(aes(x = average_transit_cost, y = fct_reorder(country_name, average_transit_cost))) +
+  geom_errorbar(aes(xmin = ifelse(ci(.025) < 0, 0, ci(.025)), #if the ci left bound is negative, make it 0 so you can see it 
+                xmax = ci(.975)),
+                color = "#6c6c6c",
+                width = .3,
+                size = .6)+
+  geom_point(color = "#4673da",
+               size = 2) +
+  labs(x = "Real cost (In millions of dollars)",
+       y = "Country",
+       title = "Cost to build transit systems vary across countries",
+       caption = "Data provided through #tidytuesday by the Transit Costs Project") +
+  scale_x_continuous(expand = c(0,0),
+                    limits = c(0, 95000),
+                     breaks = c(seq(from = 0, to = 75000, by = 15000)), 
+                     labels = scales::comma) +
+  da_theme +
+  geom_vline(xintercept = 0, color = "gray90")
+  
+```
+
+# Problem 2
+
+## Density stripes
+```{r, fig.height= 10, fig.width= 7, warning = FALSE}
+
+figure_1 %>% 
+  ggplot(aes(x = average_transit_cost, y = fct_reorder(country_name, average_transit_cost))) +
+   stat_confidence_density(aes(moe = se),
+                          fill = "#4375D3",
+                          height = 0.6) +
+  geom_point(size = 2) +
+  labs(x = "Real cost (In millions of dollars)",
+       y = "Country",
+       title = "Cost to build transit systems vary across countries",
+       caption = "Data provided through #tidytuesday by the Transit Costs Project") +
+  scale_x_continuous(expand = c(0,0),
+                    limits = c(0, 95000),
+                     breaks = c(seq(from = 0, to = 75000, by = 15000)), 
+                     labels = scales::comma) +
+  da_theme +
+  geom_vline(xintercept = 0, color = "gray90")
+
+```
+
+## Multiple error bars
+```{r, fig.height= 10, fig.width= 10}
+
+
+figure_1 %>% 
+  ggplot(aes(x = average_transit_cost, y = fct_reorder(country_name, average_transit_cost))) +
+  geom_errorbar(aes(xmin = ifelse(ci(.025) < 0, 0, ci(.025)), 
+                xmax = ci(.975),
+                color = "95%"),
+                width = .5,
+                size = .6)+
+  geom_errorbar(aes(xmin = ifelse(ci(.05) < 0, 0, ci(.05)), 
+                xmax = ci(.95),
+                color = "90%"),
+                width = .5,
+                size = .6)+
+  geom_errorbar(aes(xmin = ifelse(ci(.1) < 0, 0, ci(.1)), 
+                xmax = ci(.9),
+                color = "80%"),
+                width = .5,
+                size = .6)+
+  geom_point(size = 2) +
+  labs(x = "Real cost (In millions of dollars)",
+       y = "Country",
+       title = "Cost to build transit systems vary across countries",
+       caption = "Data provided through #tidytuesday by the Transit Costs Project") +
+  scale_x_continuous(expand = c(0,0),
+                    limits = c(0, 95000),
+                     breaks = c(seq(from = 0, to = 75000, by = 15000)), 
+                     labels = scales::comma) +
+  theme_minimal(base_size = 13) +
+  da_theme +
+  geom_vline(xintercept = 0, color = "gray90") +
+  scale_color_manual("Confidence Interval",
+                     values = c("#d61200",
+                                lighten("#d61200", .3),
+                                lighten("#d61200", .6)))
+
+
+```
+
+# Problem 3
+
+```{r message=FALSE, warning=FALSE}
+
+crime <- readr::read_csv(unzip(here("data", "hw2", "crime.zip"), "crime.csv"))
+
+model_data <- crime %>% 
+  mutate(neighborhood_id = relevel(factor(NEIGHBORHOOD_ID), ref = "barnum"))
+
+m <- glm(IS_CRIME ~ neighborhood_id, 
+         data = model_data,
+         family = "binomial")
+
+tidied <- broom::tidy(m)
+
+regis <- tidied %>% 
+  filter(term == "neighborhood_idregis")
+
+discretized <- data.frame(
+  x = qnorm(ppoints(20),
+            mean = regis$estimate,
+            sd = regis$std.error)
+  ) %>% 
+  mutate(regis = ifelse(x <= 0, "#887E96", "#55B190"))
+```
+
+
+```{r}
+ggplot(discretized, aes(x)) +
+  geom_dotplot(aes(fill = regis), binwidth=0.031)+
+  geom_vline(xintercept = 0, 
+             color = "#C04D49", 
+             size = 1.5) + 
+  scale_fill_identity(guide = "none") +
+  labs(title = "Probability of differential crime rates between neighborhoods",
+       subtitle = "<span style = 'color: #887E96'>**Regis**</span> compared to 
+       <span style = 'color: #55B190'>**Barnum**</span>",
+       x = "Difference in log odds of a crime being committed",
+       caption = "Each ball represents 5% probablity") + 
+  theme_minimal() +
+  theme(plot.subtitle = element_markdown(),
+        legend.position = "none",
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+  
+```
+
+# Problem 4
+```{r}
+# deal with year
+tbl_data <- crime %>%
+  mutate(YEAR = case_when(
+    grepl("2016", REPORTED_DATE) ~ "2016",
+    grepl("2017", REPORTED_DATE) ~ "2017",
+    grepl("2018", REPORTED_DATE) ~ "2018",
+    grepl("2019", REPORTED_DATE) ~ "2019",
+    grepl("2020", REPORTED_DATE) ~ "2020",
+    grepl("2021", REPORTED_DATE) ~ "2021")
+    ) %>%
+  dplyr::select(DISTRICT_ID, OFFENSE_CATEGORY_ID, YEAR) %>%
+  count(OFFENSE_CATEGORY_ID, DISTRICT_ID, YEAR) %>%
+  pivot_wider(names_from = "YEAR",
+              values_from = "n")%>%
+  replace(is.na(.), 0)
+
+# deal with offense category
+ tbl_data <- tbl_data %>% 
+  filter(OFFENSE_CATEGORY_ID == "aggravated-assault" |
+           OFFENSE_CATEGORY_ID == "sexual-assault" |
+           OFFENSE_CATEGORY_ID == "murder" |
+           OFFENSE_CATEGORY_ID == "other-crimes-against-persons") %>% 
+  mutate(OFFENSE_CATEGORY_ID = factor(OFFENSE_CATEGORY_ID,
+                                      levels = c(
+                                        "aggravated-assault", 
+                                        "sexual-assault", 
+                                        "murder", 
+                                        "other-crimes-against-persons"))) %>% 
+   mutate(OFFENSE_CATEGORY_ID = case_when(
+    OFFENSE_CATEGORY_ID == "aggravated-assault" ~ "Aggravated Assault",
+    OFFENSE_CATEGORY_ID == "sexual-assault" ~ "Sexual Assault",
+    OFFENSE_CATEGORY_ID == "murder" ~ "Murder",
+    OFFENSE_CATEGORY_ID == "other-crimes-against-persons" ~ "Other Crimes Against Persons"))
+ 
+# deal with district 
+tbl_data <- tbl_data %>% 
+  filter(DISTRICT_ID == "1" |
+           DISTRICT_ID == "3" |
+           DISTRICT_ID == "5") %>% 
+  mutate(DISTRICT_ID = case_when(
+    DISTRICT_ID == "1" ~ "District 1",
+    DISTRICT_ID == "3" ~ "District 3",
+    DISTRICT_ID == "5" ~ "District 5"))
+
+tbl_data %>%
+  group_by(DISTRICT_ID) %>%
+  arrange(match(OFFENSE_CATEGORY_ID, c("Aggravated Assault", 
+                                       "Sexual Assault",
+                                      "Murder",
+                                      "Other Crimes Against Persons"))) %>% 
+  gt() %>% 
+  tab_spanner(
+    label = "Year",
+    columns = vars(`2016`, `2017`, `2018`, `2019`, `2020`, `2021`)
+    ) %>% 
+  cols_label(OFFENSE_CATEGORY_ID = "Offense") %>% 
+  cols_align(align = "left",
+             columns = vars(OFFENSE_CATEGORY_ID)) %>% 
+  tab_header(
+    title = "Crimes Against Persons in Denver: 2014 to Present",
+    subtitle = md("*Sample of three districts*")
+  ) %>% 
+  tab_source_note(
+    source_note = md("Denver Crime Data Distributed via [Kaggle](https://www.kaggle.com/paultimothymooney/denver-crime-data)")
+  )
+
+```
