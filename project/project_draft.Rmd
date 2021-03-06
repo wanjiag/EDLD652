@@ -6,6 +6,8 @@ output:
   html_document:
     toc: TRUE
     toc_float: TRUE
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## Loading data and packages
@@ -62,6 +64,8 @@ ggplot(fig1_data, aes(x=value, y=popularity_median, group=property)) +
   labs(x = "Normalized Value (0-30)", y = "Median Popularity (0-100)") + 
   scale_fill_OkabeIto()
 
+# Comments from Meg: First of all, I love the way you used transparency to overlay these groups on top of each other, and especially that you used a colorblind-friendly color scale.
+# Meg: Overall, I think this is a super interesting question to be investigating, but having the properties overlaid on top of each other actually may make it more difficult to interpret. I wonder if using facet_wrap(~property) may provide a clearer way of comparing among them. 
 ```
 
 ## How does songs’ properties change over time?
@@ -81,6 +85,8 @@ ggplot(fig2_data, aes(x=decades, y=property, fill=mean)) + geom_tile() +
   labs(y="Property", x="Mean for each decade") + 
   theme(legend.position = "top")
 
+# Meg: I really love the use of a heatmap to visualize this! It looks super elegant and it's very easy to see the trends over time (I especially like how clear it is to see the peak of danceability in the 1950s). 
+# Meg: It may be more aesthetically pleasing to arrange the properties in order of intensity of heat (maybe duration, speechiness, tempo, danceability). 
 ```
 
 
@@ -148,6 +154,11 @@ fig3 = fig3 +
                     state_length = 4)
 
 animate(fig3, fps=1)
+
+# Meg: I've never worked with gganimate or tried to animate visualizations, so I'm pretty blown away by this and will definitely look into using it for my own research!
+# Meg: I am getting a warning message here: "file_renderer failed to copy frames to the destination directory" but I can still see the visualization in your HTML. I'm not sure if this is something wrong with my computer?
+# Meg: This visualization is truly so cool and innovative, and I love the way that you centered the year so it feels like some sort of time machine.
+# Meg: I found myself wanting to read all of the names for each year and feeling crunched for time. I wonder if this visualization might be well-paired with a bar chart that showed all of these artists in relation to each other (instead of grouping by year, but maybe with each year being shown in a different color). That way, when you see the animation you'd also be able to refer back to the overall bar chart. Obviously that could also be an entire other viz, though, so really no pressure to add it!
 ```
 
 
