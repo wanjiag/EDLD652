@@ -40,7 +40,7 @@ data1 = data %>%
   mutate(duration = 
            (duration_ms-min(duration_ms))/(max(duration_ms)-min(duration_ms))) %>% 
   select(-duration_ms) %>% 
-  mutate(tempo = (tempo-min(tempo))/(max(tempo)-min(tempo)))
+  mutate(tempo = (tempo-min(tempo))/(max(tempo)-min(tempo))) #I believe there are functions to scale variables so you don't have to write out the equation each time, like mutate(x = scale(x))
   
 
 fig1_data = data1 %>% select(-year) %>% 
@@ -60,7 +60,7 @@ fig1_data = data1 %>% select(-year) %>%
 ggplot(fig1_data, aes(x=value, y=popularity_median, group=property)) + 
   geom_ribbon(aes(ymin = 0, ymax = popularity_median, fill=property), alpha=0.6) + 
   labs(x = "Normalized Value (0-30)", y = "Median Popularity (0-100)") + 
-  scale_fill_OkabeIto()
+  scale_fill_OkabeIto() #Received an error here, should add the package/library for function "scale_fill_OkabeIto"
 
 ```
 
@@ -87,8 +87,8 @@ ggplot(fig2_data, aes(x=decades, y=property, fill=mean)) + geom_tile() +
 ## The most popular artist over time
 
 ```{r}
-
-library(gganimate)
+#install.packages('gganimate')
+library(gganimate) #should add this to list at the top, with the rest of the libraries
 
 artist_data = data %>% 
   select(popularity, artists, year) %>% 
