@@ -13,4 +13,4 @@ Homework, labs, and final project for Data Visualization course.
 
 - [x] [Project Draft](https://wanjiag.github.io/EDLD652/project/project_draft.html)
 
-- [ ] [Final Project](https://wanjiag.github.io/EDLD652_project_blog/)
+- [x] [Final Project](https://wanjiag.github.io/EDLD652_project_blog/)
