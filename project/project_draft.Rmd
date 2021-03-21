@@ -13,9 +13,8 @@ output:
 ```{r setup, include=FALSE}
 
 library(tidyverse)
-library(ggplot2)
-library(dplyr)
-library(colorblindr)
+#ggplot2 and dplyr and redundant once tidyverse is loaded
+library(colorblindr) #it would be better to comment the following command for those who haven't insremotes::install_github("clauswilke/colorblindr")
 
 theme_set(theme_minimal())
 
@@ -62,6 +61,11 @@ ggplot(fig1_data, aes(x=value, y=popularity_median, group=property)) +
   labs(x = "Normalized Value (0-30)", y = "Median Popularity (0-100)") + 
   scale_fill_OkabeIto()
 
+#To illustrate the correlation between x (normalized value of song properties) and y (song ppularity), I think geom_line() would be better than geom_ribbon(). 
+
+#It may also be nice to use geom_smooth(method = "lm") and comparate the linear regression lines with the actual results
+
+
 ```
 
 ## How does songs’ properties change over time?
@@ -81,12 +85,14 @@ ggplot(fig2_data, aes(x=decades, y=property, fill=mean)) + geom_tile() +
   labs(y="Property", x="Mean for each decade") + 
   theme(legend.position = "top")
 
+# There doesn't seem to be an particular order in which each song property was placed. Maybe you can arrange them based on their variability, in descending order?
+
 ```
 
 
 ## The most popular artist over time
 
-```{r}
+```{r, warning = FALSE}
 
 library(gganimate)
 
@@ -148,6 +154,13 @@ fig3 = fig3 +
                     state_length = 4)
 
 animate(fig3, fps=1)
+
+# There was hundreds of warning messages on this part of r chunk so I had to scroll down quite a bit to actually find your plot. It's a minor inconvenience, but a little more detail on r chunks would be nice!
+
+# It will be really cool to you show the song properties of each artist!
+
+# Also, how is the popularity level (0-100) measured? This is more of a general comment, but a little more explanation on data would be helpful.
+
 ```
 
 
